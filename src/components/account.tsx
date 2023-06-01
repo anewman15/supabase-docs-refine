@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
-import { useGetIdentity } from '@refinedev/core'
+import { useGetIdentity, useIsAuthenticated, useLogout } from '@refinedev/core'
 import Avatar from './avatar'
 
 export default function Account() {
@@ -13,6 +13,9 @@ export default function Account() {
     id: "number";
     name: "string"
   }>();
+
+  const { data: authenticationStatus } = useIsAuthenticated();
+  const { mutate: logOut } = useLogout();
 
   useEffect(() => {
     async function getProfile() {
@@ -36,7 +39,7 @@ export default function Account() {
     }
 
     getProfile()
-  }, [userIdentity])
+  }, [userIdentity, authenticationStatus])
 
   async function updateProfile(event: { preventDefault: () => void }) {
     event.preventDefault()
@@ -101,7 +104,7 @@ export default function Account() {
         </div>
 
         <div>
-          <button className="button block" type="button" onClick={() => supabaseClient.auth.signOut()}>
+          <button className="button block" type="button" onClick={() => logOut()}>
             Sign Out
           </button>
         </div>
