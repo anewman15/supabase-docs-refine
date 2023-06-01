@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
 import { useGetIdentity } from '@refinedev/core'
+import Avatar from './avatar'
 
 export default function Account() {
   const [loading, setLoading] = useState(true)
@@ -59,42 +60,52 @@ export default function Account() {
   }
 
   return (
-    <form onSubmit={updateProfile} className="form-widget">
-      <div>
-        <label htmlFor="email">Email</label>
-        <input id="email" type="text" value={userIdentity?.name} disabled />
-      </div>
-      <div>
-        <label htmlFor="username">Name</label>
-        <input
-          id="username"
-          type="text"
-          required
-          value={username || ''}
-          onChange={(e: any) => setUsername(e.target.value)}
-        />
-      </div>
-      <div>
-        <label htmlFor="website">Website</label>
-        <input
-          id="website"
-          type="url"
-          value={website || ''}
-          onChange={(e: any) => setWebsite(e.target.value)}
-        />
-      </div>
+    <div className="container" style={{ padding: '50px 0 100px 0' }}>
+      <form onSubmit={updateProfile} className="form-widget">
+        <Avatar
+        url={avatar_url}
+        size={150}
+        onUpload={(event: any, url: any) => {
+          setAvatarUrl(url)
+          updateProfile(event)
+        }}
+      />
+        <div>
+          <label htmlFor="email">Email</label>
+          <input id="email" type="text" value={userIdentity?.name} disabled />
+        </div>
+        <div>
+          <label htmlFor="username">Name</label>
+          <input
+            id="username"
+            type="text"
+            required
+            value={username || ''}
+            onChange={(e: any) => setUsername(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            type="url"
+            value={website || ''}
+            onChange={(e: any) => setWebsite(e.target.value)}
+          />
+        </div>
 
-      <div>
-        <button className="button block primary" type="submit" disabled={loading}>
-          {loading ? 'Loading ...' : 'Update'}
-        </button>
-      </div>
+        <div>
+          <button className="button block primary" type="submit" disabled={loading}>
+            {loading ? 'Loading ...' : 'Update'}
+          </button>
+        </div>
 
-      <div>
-        <button className="button block" type="button" onClick={() => supabaseClient.auth.signOut()}>
-          Sign Out
-        </button>
-      </div>
-    </form>
+        <div>
+          <button className="button block" type="button" onClick={() => supabaseClient.auth.signOut()}>
+            Sign Out
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
