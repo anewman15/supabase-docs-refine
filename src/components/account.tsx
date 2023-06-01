@@ -1,58 +1,60 @@
 import { useState, useEffect } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
+import { useGetIdentity } from '@refinedev/core'
 
-export default function Account(
-    // { session }
-) {
+export default function Account() {
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState(null)
   const [website, setWebsite] = useState(null)
   const [avatar_url, setAvatarUrl] = useState(null)
+  
+  const { data: userIdentity } = useGetIdentity<{
+    id: "number";
+    name: "string"
+  }>();
 
-//   useEffect(() => {
-//     async function getProfile() {
-//       setLoading(true)
-//       const { user } = session
+  useEffect(() => {
+    async function getProfile() {
+      setLoading(true)
 
-//       let { data, error } = await supabaseClient
-//         .from('profiles')
-//         .select(`username, website, avatar_url`)
-//         .eq('id', user.id)
-//         .single()
+      let { data, error } = await supabaseClient
+        .from('profiles')
+        .select(`username, website, avatar_url`)
+        .eq('id', userIdentity?.id)
+        .single()
 
-//       if (error) {
-//         console.warn(error)
-//       } else if (data) {
-//         setUsername(data.username)
-//         setWebsite(data.website)
-//         setAvatarUrl(data.avatar_url)
-//       }
+      if (error) {
+        console.warn(error)
+      } else if (data) {
+        setUsername(data.username)
+        setWebsite(data.website)
+        setAvatarUrl(data.avatar_url)
+      }
 
-//       setLoading(false)
-//     }
+      setLoading(false)
+    }
 
-//     getProfile()
-//   }, [session])
+    getProfile()
+  }, [userIdentity])
 
   async function updateProfile(event: { preventDefault: () => void }) {
     event.preventDefault()
 
     setLoading(true)
-    // const { user } = session
 
-    // const updates = {
-    //   id: user.id,
-    //   username,
-    //   website,
-    //   avatar_url,
-    //   updated_at: new Date(),
-    // }
+    const updates = {
+      id: userIdentity?.id,
+      username,
+      website,
+      avatar_url,
+      updated_at: new Date(),
+    }
 
-    // let { error } = await supabaseClient.from('profiles').upsert(updates)
+    let { error } = await supabaseClient.from('profiles').upsert(updates)
 
-    // if (error) {
-    //   alert(error.message)
-    // }
+    if (error) {
+      alert(error.message)
+    }
     setLoading(false)
   }
 
@@ -60,7 +62,7 @@ export default function Account(
     <form onSubmit={updateProfile} className="form-widget">
       <div>
         <label htmlFor="email">Email</label>
-        {/* <input id="email" type="text" value={session.user.email} disabled /> */}
+        <input id="email" type="text" value={userIdentity?.name} disabled />
       </div>
       <div>
         <label htmlFor="username">Name</label>
