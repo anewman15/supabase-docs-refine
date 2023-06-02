@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
-import { useGetIdentity, useIsAuthenticated, useLogout } from '@refinedev/core'
+import { HttpError, useGetIdentity, useIsAuthenticated, useLogout, useOne } from '@refinedev/core'
 import Avatar from './avatar'
+
+interface IProfile {
+  id: string;
+  username: string;
+  website: string;
+  avatar_url: string;
+}
 
 export default function Account() {
   const [loading, setLoading] = useState(true)
-  const [username, setUsername] = useState(null)
-  const [website, setWebsite] = useState(null)
-  const [avatar_url, setAvatarUrl] = useState(null)
+  const [username, setUsername] = useState<string | undefined>("")
+  const [website, setWebsite] = useState<string | undefined>("")
+  const [avatar_url, setAvatarUrl] = useState<string | undefined>("")
   
   const { data: userIdentity } = useGetIdentity<{
     id: "number";
@@ -17,29 +24,12 @@ export default function Account() {
   const { data: authenticationStatus } = useIsAuthenticated();
   const { mutate: logOut } = useLogout();
 
-  useEffect(() => {
-    async function getProfile() {
-      setLoading(true)
+  const { data: userProfileData, isLoading, isError } = useOne<IProfile, HttpError>({
+    resource: "profiles",
+    id: userIdentity?.id,
+  })
 
-      let { data, error } = await supabaseClient
-        .from('profiles')
-        .select(`username, website, avatar_url`)
-        .eq('id', userIdentity?.id)
-        .single()
-
-      if (error) {
-        console.warn(error)
-      } else if (data) {
-        setUsername(data.username)
-        setWebsite(data.website)
-        setAvatarUrl(data.avatar_url)
-      }
-
-      setLoading(false)
-    }
-
-    getProfile()
-  }, [userIdentity, authenticationStatus])
+  const userProfile = userProfileData?.data;
 
   async function updateProfile(event: { preventDefault: () => void }) {
     event.preventDefault()
@@ -62,11 +52,12 @@ export default function Account() {
     setLoading(false)
   }
 
+  console.log(username)
   return (
     <div className="container" style={{ padding: '50px 0 100px 0' }}>
       <form onSubmit={updateProfile} className="form-widget">
         <Avatar
-        url={avatar_url}
+        url={userProfile?.avatar_url}
         size={150}
         onUpload={(event: any, url: any) => {
           setAvatarUrl(url)
@@ -83,7 +74,7 @@ export default function Account() {
             id="username"
             type="text"
             required
-            value={username || ''}
+            value={userProfile?.username}
             onChange={(e: any) => setUsername(e.target.value)}
           />
         </div>
@@ -92,14 +83,14 @@ export default function Account() {
           <input
             id="website"
             type="url"
-            value={website || ''}
+            value={userProfile?.website ?? ''}
             onChange={(e: any) => setWebsite(e.target.value)}
           />
         </div>
 
         <div>
-          <button className="button block primary" type="submit" disabled={loading}>
-            {loading ? 'Loading ...' : 'Update'}
+          <button className="button block primary" type="submit" disabled={isLoading}>
+            {isLoading ? 'Loading ...' : 'Update'}
           </button>
         </div>
 
