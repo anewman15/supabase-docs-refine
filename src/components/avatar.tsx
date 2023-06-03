@@ -3,7 +3,7 @@ import { supabaseClient } from '../utility/supabaseClient'
 import { BaseKey, useUpdate } from '@refinedev/core';
 import { IProfile } from './account';
 
-export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url: any; size: any; formValues: IProfile}) {
+export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url?: string; size: number; formValues: IProfile}) {
   const [avatarUrl, setAvatarUrl] = useState("")
   const [uploading, setUploading] = useState(false)
 
@@ -26,7 +26,7 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
     }
   }
 
-  async function uploadAvatar(event: any) {
+  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
     try {
       setUploading(true)
 
