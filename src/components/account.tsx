@@ -1,96 +1,104 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
-import { HttpError, useGetIdentity, useIsAuthenticated, useLogout, useOne } from '@refinedev/core'
+import { BaseKey, HttpError, useForm, useGetIdentity, useIsAuthenticated, useLogout, useOne } from '@refinedev/core'
 import Avatar from './avatar'
 
-interface IProfile {
-  id: string;
-  username: string;
-  website: string;
-  avatar_url: string;
+export interface IProfile {
+  id?: string;
+  username?: string;
+  website?: string;
+  avatar_url?: string;
 }
 
 export default function Account() {
-  const [loading, setLoading] = useState(true)
-  const [username, setUsername] = useState<string | undefined>("")
-  const [website, setWebsite] = useState<string | undefined>("")
-  const [avatar_url, setAvatarUrl] = useState<string | undefined>("")
-  
-  const { data: userIdentity } = useGetIdentity<{
-    id: "number";
-    name: "string"
-  }>();
+    const { data: userIdentity } = useGetIdentity<{
+    id?: BaseKey;
+    username: string;
+    name: string;
+  }>()
 
-  const { data: authenticationStatus } = useIsAuthenticated();
-  const { mutate: logOut } = useLogout();
+  const { data: authenticationStatus } = useIsAuthenticated()
+  const { mutate: logOut } = useLogout()
 
-  const { data: userProfileData, isLoading, isError } = useOne<IProfile, HttpError>({
+  const { formLoading, onFinish, queryResult } = useForm<IProfile>({
     resource: "profiles",
+    action: "edit",
     id: userIdentity?.id,
+    redirect: false,
   })
 
-  const userProfile = userProfileData?.data;
+  const defaultFormValues = queryResult?.data?.data
 
-  async function updateProfile(event: { preventDefault: () => void }) {
-    event.preventDefault()
+  const [formValues, setFormValues] = useState<IProfile>({
+    id: defaultFormValues?.id || "",
+    username: defaultFormValues?.username || "",
+    website: defaultFormValues?.website || "",
+    avatar_url: defaultFormValues?.avatar_url || "",
+  });
 
-    setLoading(true)
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>("")
 
-    const updates = {
-      id: userIdentity?.id,
-      username,
-      website,
-      avatar_url,
-      updated_at: new Date(),
-    }
-
-    let { error } = await supabaseClient.from('profiles').upsert(updates)
-
-    if (error) {
-      alert(error.message)
-    }
-    setLoading(false)
+  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormValues({
+      ...formValues,
+      [e.target.name]: e.target.value
+    })
+  }
+  
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    onFinish(formValues)
   }
 
-  console.log(username)
+  useEffect(
+    () => {
+      setFormValues({
+        id: defaultFormValues?.id || '',
+        username: defaultFormValues?.username || "",
+        website: defaultFormValues?.website || "",
+        avatar_url: defaultFormValues?.avatar_url || "",
+      })
+    }, [defaultFormValues]
+  )
+
   return (
     <div className="container" style={{ padding: '50px 0 100px 0' }}>
-      <form onSubmit={updateProfile} className="form-widget">
+      <form onSubmit={handleSubmit} className="form-widget">
         <Avatar
-        url={userProfile?.avatar_url}
+        id={userIdentity?.id}
+        url={formValues?.avatar_url}
         size={150}
-        onUpload={(event: any, url: any) => {
-          setAvatarUrl(url)
-          updateProfile(event)
-        }}
+        formValues={formValues}
       />
         <div>
           <label htmlFor="email">Email</label>
-          <input id="email" type="text" value={userIdentity?.name} disabled />
+          <input id="email" name="email" type="text" value={userIdentity?.name} disabled />
         </div>
         <div>
           <label htmlFor="username">Name</label>
           <input
             id="username"
+            name="username"
             type="text"
             required
-            value={userProfile?.username}
-            onChange={(e: any) => setUsername(e.target.value)}
+            value={formValues?.username}
+            onChange={handleOnChange}
           />
         </div>
         <div>
           <label htmlFor="website">Website</label>
           <input
             id="website"
+            name='website'
             type="url"
-            value={userProfile?.website ?? ''}
-            onChange={(e: any) => setWebsite(e.target.value)}
+            value={formValues?.website}
+            onChange={handleOnChange}
           />
         </div>
 
         <div>
-          <button className="button block primary" type="submit" disabled={isLoading}>
-            {isLoading ? 'Loading ...' : 'Update'}
+          <button className="button block primary" type="submit" disabled={formLoading}>
+            {formLoading ? 'Loading ...' : 'Update'}
           </button>
         </div>
 
