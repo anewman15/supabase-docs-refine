@@ -1,6 +1,10 @@
-import { useState, useEffect, FormEvent } from 'react'
-import { supabaseClient } from '../utility/supabaseClient'
-import { BaseKey, HttpError, useForm, useGetIdentity, useIsAuthenticated, useLogout, useOne } from '@refinedev/core'
+import { useState, useEffect } from 'react'
+import {
+  BaseKey,
+  useForm,
+  useGetIdentity,
+  useLogout,
+} from '@refinedev/core'
 import Avatar from './avatar'
 
 export interface IProfile {
@@ -17,7 +21,6 @@ export default function Account() {
     name: string;
   }>()
 
-  const { data: authenticationStatus } = useIsAuthenticated()
   const { mutate: logOut } = useLogout()
 
   const { formLoading, onFinish, queryResult } = useForm<IProfile>({
@@ -35,8 +38,6 @@ export default function Account() {
     website: defaultFormValues?.website || "",
     avatar_url: defaultFormValues?.avatar_url || "",
   });
-
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>("")
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormValues({
