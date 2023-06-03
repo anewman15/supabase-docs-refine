@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
+import { BaseKey, useUpdate } from '@refinedev/core';
+import { IProfile } from './account';
 
-export default function Avatar({ url, size, onUpload }: { url: any; size: any; onUpload: any}) {
+export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url: any; size: any; formValues: IProfile}) {
   const [avatarUrl, setAvatarUrl] = useState("")
   const [uploading, setUploading] = useState(false)
 
+  const { mutate } = useUpdate()
+  
   useEffect(() => {
     if (url) downloadImage(url)
   }, [url])
@@ -41,7 +45,15 @@ export default function Avatar({ url, size, onUpload }: { url: any; size: any; o
         throw uploadError
       }
 
-      onUpload(event, filePath)
+      mutate({
+        resource: "profiles",
+        values: {
+          ...formValues,
+          avatar_url: filePath,
+        },
+        id
+      })
+      
     } catch (error: any) {
       alert(error.message)
     } finally {
@@ -56,10 +68,10 @@ export default function Avatar({ url, size, onUpload }: { url: any; size: any; o
           src={avatarUrl}
           alt="Avatar"
           className="avatar image"
-          style={{ width: size }}
+          style={{ height: size, width: size }}
         />
       ) : (
-        <div className="avatar no-image" style={{ height: "50px", width: size }} />
+        <div className="avatar no-image" style={{ height: size, width: size }} />
       )}
       <div style={{ width: size }}>
         <label className="button primary block" htmlFor="single">
@@ -72,6 +84,7 @@ export default function Avatar({ url, size, onUpload }: { url: any; size: any; o
           }}
           type="file"
           id="single"
+          name="avatar"
           accept="image/*"
           onChange={uploadAvatar}
           disabled={uploading}
