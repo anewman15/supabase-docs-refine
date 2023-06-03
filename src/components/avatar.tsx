@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabaseClient } from '../utility/supabaseClient'
-import { BaseKey, useUpdate } from '@refinedev/core';
-import { IProfile } from './account';
+import { BaseKey, useUpdate } from '@refinedev/core'
+import { IProfile } from './account'
 
 export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url?: string; size: number; formValues: IProfile}) {
   const [avatarUrl, setAvatarUrl] = useState("")
