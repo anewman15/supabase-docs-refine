@@ -1,23 +1,14 @@
-import { useState } from 'react'
-import { supabaseClient } from '../utility/supabaseClient'
+import { useState } from 'react';
+import { useLogin } from '@refinedev/core';
 
 export default function Auth() {
-  const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState('')
-
+  const [email, setEmail] = useState('');
+  const { isLoading, mutate: login } = useLogin();
+  
   const handleLogin = async (event: { preventDefault: () => void }) => {
-    event.preventDefault()
-
-    setLoading(true)
-    const { error } = await supabaseClient.auth.signInWithOtp({ email })
-
-    if (error) {
-      alert(error.message)
-    } else {
-      alert('Check your email for the login link!')
-    }
-    setLoading(false)
-  }
+    event.preventDefault();
+    login({email});
+  };
 
   return (
     <div className="row flex flex-center">
@@ -36,12 +27,12 @@ export default function Auth() {
             />
           </div>
           <div>
-            <button className={'button block'} disabled={loading}>
-              {loading ? <span>Loading</span> : <span>Send magic link</span>}
+            <button className={'button block'} disabled={isLoading}>
+              {isLoading ? <span>Loading</span> : <span>Send magic link</span>}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
