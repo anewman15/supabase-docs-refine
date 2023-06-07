@@ -1,17 +1,17 @@
-import { Authenticated, GitHubBanner, Refine, WelcomePage } from "@refinedev/core"
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar"
+import { Authenticated, GitHubBanner, Refine } from "@refinedev/core";
+import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import routerBindings, {
   CatchAllNavigate,
   UnsavedChangesNotifier,
-} from "@refinedev/react-router-v6"
-import { dataProvider, liveProvider } from "@refinedev/supabase"
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom"
-import "./App.css"
-import authProvider from "./authProvider"
-import { supabaseClient } from "./utility"
-import Account from "./components/account"
-import Auth from "./components/auth"
+} from "@refinedev/react-router-v6";
+import { dataProvider, liveProvider } from "@refinedev/supabase";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import "./App.css";
+import authProvider from "./authProvider";
+import { supabaseClient } from "./utility";
+import Account from "./components/account";
+import Auth from "./components/auth";
 
 function App() {
   return (
@@ -55,7 +55,7 @@ function App() {
         </Refine>
       </RefineKbarProvider>
     </BrowserRouter>
-  )
-}
+  );
+};
 
-export default App
+export default App;
