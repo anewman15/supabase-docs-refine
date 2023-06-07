@@ -1,36 +1,38 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import {
   BaseKey,
   useForm,
   useGetIdentity,
   useLogout,
-} from '@refinedev/core'
-import Avatar from './avatar'
+} from '@refinedev/core';
+import Avatar from './avatar';
 
 export interface IProfile {
   id?: string;
   username?: string;
   website?: string;
   avatar_url?: string;
-}
+};
+
+export interface IUserIdentity {
+  id?: BaseKey;
+  username: string;
+  name: string;
+};
 
 export default function Account() {
-    const { data: userIdentity } = useGetIdentity<{
-    id?: BaseKey;
-    username: string;
-    name: string;
-  }>()
+    const { data: userIdentity } = useGetIdentity<IUserIdentity>();
 
-  const { mutate: logOut } = useLogout()
+  const { mutate: logOut } = useLogout();
 
   const { formLoading, onFinish, queryResult } = useForm<IProfile>({
     resource: "profiles",
     action: "edit",
     id: userIdentity?.id,
     redirect: false,
-  })
+  });
 
-  const defaultFormValues = queryResult?.data?.data
+  const defaultFormValues = queryResult?.data?.data;
 
   const [formValues, setFormValues] = useState<IProfile>({
     id: defaultFormValues?.id || "",
@@ -43,13 +45,13 @@ export default function Account() {
     setFormValues({
       ...formValues,
       [e.target.name]: e.target.value
-    })
-  }
+    });
+  };
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    onFinish(formValues)
-  }
+    e.preventDefault();
+    onFinish(formValues);
+  };
 
   useEffect(
     () => {
@@ -60,7 +62,7 @@ export default function Account() {
         avatar_url: defaultFormValues?.avatar_url || "",
       })
     }, [defaultFormValues]
-  )
+  );
 
   return (
     <div className="container" style={{ padding: '50px 0 100px 0' }}>
@@ -110,5 +112,5 @@ export default function Account() {
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
