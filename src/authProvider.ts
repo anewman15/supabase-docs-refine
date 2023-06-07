@@ -3,115 +3,14 @@ import { AuthBindings } from "@refinedev/core";
 import { supabaseClient } from "./utility";
 
 const authProvider: AuthBindings = {
-  login: async ({ email, password, providerName }) => {
-    // sign in with oauth
+  login: async ({ email }) => {
     try {
-      if (providerName) {
-        const { data, error } = await supabaseClient.auth.signInWithOAuth({
-          provider: providerName,
-        });
-
-        if (error) {
-          return {
-            success: false,
-            error,
-          };
-        }
-
-        if (data?.url) {
-          return {
-            success: true,
-            redirectTo: "/",
-          };
-        }
-      }
-
-      // sign in with email and password
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
       if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data?.user) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Login failed",
-        name: "Invalid email or password",
-      },
-    };
-  },
-  register: async ({ email, password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Register failed",
-        name: "Invalid email or password",
-      },
-    };
-  },
-  forgotPassword: async ({ email }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${window.location.origin}/update-password`,
-        }
-      );
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
+        alert(error.message);
+      } else {
+        alert("Check your email for the login link!");
         return {
           success: true,
         };
@@ -126,41 +25,8 @@ const authProvider: AuthBindings = {
     return {
       success: false,
       error: {
-        message: "Forgot password failed",
-        name: "Invalid email",
-      },
-    };
-  },
-  updatePassword: async ({ password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.updateUser({
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-    return {
-      success: false,
-      error: {
-        message: "Update password failed",
-        name: "Invalid password",
+        message: "Otp delivery failed.",
+        name: "Something went wrong!",
       },
     };
   },
@@ -214,15 +80,6 @@ const authProvider: AuthBindings = {
     return {
       authenticated: true,
     };
-  },
-  getPermissions: async () => {
-    const user = await supabaseClient.auth.getUser();
-
-    if (user) {
-      return user.data.user?.role;
-    }
-
-    return null;
   },
   getIdentity: async () => {
     const { data } = await supabaseClient.auth.getUser();
