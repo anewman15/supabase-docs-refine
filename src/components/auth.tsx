@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { useLogin } from '@refinedev/core';
+import { useState } from "react";
+import { useLogin } from "@refinedev/core";
 
 export default function Auth() {
-  const [email, setEmail] = useState('');
-  const { isLoading, mutate: login } = useLogin();
-  
-  const handleLogin = async (event: { preventDefault: () => void }) => {
-    event.preventDefault();
-    login({email});
-  };
+    const [email, setEmail] = useState("");
+    const { isLoading, mutate: login } = useLogin();
+    
+    const handleLogin = async (event: { preventDefault: () => void }) => {
+      event.preventDefault();
+      login({ email });
+    };
 
   return (
     <div className="row flex flex-center">
@@ -27,7 +27,7 @@ export default function Auth() {
             />
           </div>
           <div>
-            <button className={'button block'} disabled={isLoading}>
+            <button className={"button block"} disabled={isLoading}>
               {isLoading ? <span>Loading</span> : <span>Send magic link</span>}
             </button>
           </div>

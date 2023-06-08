@@ -3,6 +3,7 @@ import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import routerBindings, {
   CatchAllNavigate,
+  DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
 import { dataProvider, liveProvider } from "@refinedev/supabase";
@@ -29,29 +30,32 @@ function App() {
           }}
         >
           <Routes>
-          <Route
-            element={
-              <Authenticated
-                  fallback={<CatchAllNavigate to="/login" />}
-              >
-                  <Outlet />
-              </Authenticated>
-            }
-          >
-            <Route index element={<Account />} />
-          </Route>
-          <Route
-            element={
-              <Authenticated
-                fallback={<Outlet />}
-              />
-            }
-          >
-            <Route path="/login" element={<Auth />} />
-          </Route>
+          // highlight-start
+            <Route
+              element={
+                <Authenticated
+                    fallback={<CatchAllNavigate to="/login" />}
+                >
+                    <Outlet />
+                </Authenticated>
+              }
+            >
+              <Route index element={<Account />} />
+            </Route>
+            <Route
+              element={
+                <Authenticated
+                  fallback={<Outlet />}
+                />
+              }
+            >
+              <Route path="/login" element={<Auth />} />
+            </Route>
+            // highlight-end
           </Routes>
           <RefineKbar />
           <UnsavedChangesNotifier />
+          <DocumentTitleHandler />
         </Refine>
       </RefineKbarProvider>
     </BrowserRouter>

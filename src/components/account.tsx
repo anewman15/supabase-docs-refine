@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   BaseKey,
   useForm,
   useGetIdentity,
   useLogout,
-} from '@refinedev/core';
-import Avatar from './avatar';
+} from "@refinedev/core";
+import Avatar from "./avatar";
+
+export interface IUserIdentity {
+  id?: BaseKey;
+  username: string;
+  name: string;
+};
 
 export interface IProfile {
   id?: string;
@@ -14,14 +20,8 @@ export interface IProfile {
   avatar_url?: string;
 };
 
-export interface IUserIdentity {
-  id?: BaseKey;
-  username: string;
-  name: string;
-};
-
 export default function Account() {
-    const { data: userIdentity } = useGetIdentity<IUserIdentity>();
+  const { data: userIdentity } = useGetIdentity<IUserIdentity>();
 
   const { mutate: logOut } = useLogout();
 
@@ -56,7 +56,7 @@ export default function Account() {
   useEffect(
     () => {
       setFormValues({
-        id: defaultFormValues?.id || '',
+        id: defaultFormValues?.id || "",
         username: defaultFormValues?.username || "",
         website: defaultFormValues?.website || "",
         avatar_url: defaultFormValues?.avatar_url || "",
@@ -65,14 +65,14 @@ export default function Account() {
   );
 
   return (
-    <div className="container" style={{ padding: '50px 0 100px 0' }}>
+    <div className="container" style={{ padding: "50px 0 100px 0" }}>
       <form onSubmit={handleSubmit} className="form-widget">
         <Avatar
-        id={userIdentity?.id}
-        url={formValues?.avatar_url}
-        size={150}
-        formValues={formValues}
-      />
+          id={userIdentity?.id}
+          url={formValues?.avatar_url}
+          size={150}
+          formValues={formValues}
+        />
         <div>
           <label htmlFor="email">Email</label>
           <input id="email" name="email" type="text" value={userIdentity?.name} disabled />
@@ -92,7 +92,7 @@ export default function Account() {
           <label htmlFor="website">Website</label>
           <input
             id="website"
-            name='website'
+            name="website"
             type="url"
             value={formValues?.website}
             onChange={handleOnChange}
@@ -101,7 +101,7 @@ export default function Account() {
 
         <div>
           <button className="button block primary" type="submit" disabled={formLoading}>
-            {formLoading ? 'Loading ...' : 'Update'}
+            {formLoading ? "Loading ..." : "Update"}
           </button>
         </div>
 

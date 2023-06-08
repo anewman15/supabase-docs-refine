@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { supabaseClient } from '../utility/supabaseClient';
-import { BaseKey, useUpdate } from '@refinedev/core';
-import { IProfile } from './account';
+import { useEffect, useState } from "react";
+import { supabaseClient } from "../utility/supabaseClient";
+import { BaseKey, useUpdate } from "@refinedev/core";
+import { IProfile } from "./account";
 
 export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url?: string; size: number; formValues: IProfile}) {
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -15,31 +15,31 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
 
   async function downloadImage(path: string) {
     try {
-      const { data, error } = await supabaseClient.storage.from('avatars').download(path);
+      const { data, error } = await supabaseClient.storage.from("avatars").download(path);
       if (error) {
         throw error;
       }
       const url = URL.createObjectURL(data);
       setAvatarUrl(url);
     } catch (error: any) {
-      console.log('Error downloading image: ', error?.message);
+      console.log("Error downloading image: ", error?.message);
     }
-  };
+  }
 
   async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
     try {
       setUploading(true);
 
       if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
+        throw new Error("You must select an image to upload.");
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      let { error: uploadError } = await supabaseClient.storage.from('avatars').upload(filePath, file);
+      let { error: uploadError } = await supabaseClient.storage.from("avatars").upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
@@ -51,8 +51,8 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
           ...formValues,
           avatar_url: filePath,
         },
-        id
-      });
+        id,
+      })
       
     } catch (error: any) {
       alert(error.message);
@@ -75,12 +75,12 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
       )}
       <div style={{ width: size }}>
         <label className="button primary block" htmlFor="single">
-          {uploading ? 'Uploading ...' : 'Upload'}
+          {uploading ? "Uploading ..." : "Upload"}
         </label>
         <input
           style={{
-            visibility: 'hidden',
-            position: 'absolute',
+            visibility: "hidden",
+            position: "absolute",
           }}
           type="file"
           id="single"
