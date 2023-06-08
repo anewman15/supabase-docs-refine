@@ -42,7 +42,7 @@ We can use [refine CLI](https://refine.dev/docs/packages/documentation/cli/) to 
 an app called `supabase-refine`. Run the following in the terminal:
 
 ```bash
-npm create refine-app@latest -- --preset refine-supabase --name supabase-refine
+npm create refine-app@latest -- --preset refine-supabase supabase-refine
 ```
 
 In the above `npm create` command we are using the `refine-supabase` preset which chooses the **Supabase** supplementary package for our app. We are not using any UI framework so we'll have a headless UI with plain React and CSS styling.
