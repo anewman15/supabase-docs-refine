@@ -334,10 +334,15 @@ Notice above that, we are using three **refine** hooks, namely the `useGetIdenti
 
 `useGetIdentity()` is a auth hook that gets the identity of the authenticated user. It grabs the current user by invoking the `authProvider.getIdentity` method under the hood.
 
+[Refer to the `useGetIdentity()` hook docs for more details.]()
+
 `useLogOut()` is also an auth hook. It calls the `authProvider.logout` method to end the session.
+
+[Refer to the `useLogOut()` hook docs for more details.]()
 
 `useForm()`, in contrast, is a data hook that exposes a series of useful objects that serve the edit form. For example, we are grabbing `queryResult` to present fetched API data inside form fields. We are also using the `onFinish` function to define the `handleSubmit` event handler and `formLoading` property to present state changes of the submitted form. The `useForm()` hook invokes the `dataProvider.getOne` method to get the user profile data from our **Supabase** `/profiles` endpoint. It also invokes `dataProvider.update` method when `onFinish()` is called.
 
+[Refer to the `useForm()` hook docs for more details.]()
 
 ### Launch!
 
@@ -531,6 +536,8 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
 ```
 
 Notice we are using another  **refine** data hook above, the `useUpdate()` hook, which basically invokes the `dataProvider.update` method behind the scenes to upload and update the avatar image.
+
+[Refer to the `useUpdate()` hook docs for more details.]()
 
 
 ### Add the new widget
@@ -888,6 +895,8 @@ export default function Auth() {
 ```
 
 Notice now we are using the **refine** auth `useLogin()` hook to grab the `login` method to use inside `handleLogin()` function and `isLoading` state conveniently for our form submission.
+
+[Refer to the `useLogin()` hook docs for more details.]()
 
 We can also remove `register`, `updatePassword`, `forgotPassword` and `getPermissions` properties, which are optional type members and also not necessary for our app. The final `authProvider` object looks like this:
 
