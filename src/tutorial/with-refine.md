@@ -45,7 +45,7 @@ an app called `supabase-refine`. Run the following in the terminal:
 npm create refine-app@latest -- --preset refine-supabase supabase-refine
 ```
 
-In the above `npm create` command we are using the `refine-supabase` preset which chooses the **Supabase** supplementary package for our app. We are not using any UI framework so we'll have a headless UI with plain React and CSS styling.
+In the above `npm create` command, we are using the `refine-supabase` preset which chooses the **Supabase** supplementary package for our app. We are not using any UI framework so we'll have a headless UI with plain React and CSS styling.
 
 The `refine-supabase` preset installs the `@refinedev/supabase` package which out-of-the-box includes the **Supabase** dependency: [supabase-js](https://github.com/supabase/supabase-js).
 
@@ -148,33 +148,164 @@ export default App;
 We'd like to focus on the `<Refine />` component, which comes with several props passed to it. Notice the `dataProvider` prop. It uses a `dataProvider()` function with `supabaseClient` passed as argument to generate the data provider object. The `authProvider` object also uses `supabaseClient` in implementing its methods. You can look it up in `src/authProvider.ts` file.
 
 
+## Customize `authProvider`
+
+If you examine the `authProvider` object you can notice that it has a `login` method that implements a OAuth and Email / Password strategy for authentication. We'll, however, ditch them and use Magic Links to allow users sign in with their email without using passwords.
+
+We want to use `supabaseClient` auth's `signInWithOtp` method inside `authProvider.login` method:
+
+```ts
+login: async ({ email }) => {
+    try {
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+
+      if (error) {
+        alert(error.message);
+      } else {
+        alert("Check your email for the login link!");
+        return {
+          success: true,
+        };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error,
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        message: "Otp delivery failed.",
+        name: "Something went wrong!",
+      },
+    };
+  },
+```
+
+We also want to remove `register`, `updatePassword`, `forgotPassword` and `getPermissions` properties, which are optional type members and also not necessary for our app. The final `authProvider` object looks like this:
+
+```ts title="src/authProvider.ts"
+import { AuthBindings } from "@refinedev/core";
+
+import { supabaseClient } from "./utility";
+
+const authProvider: AuthBindings = {
+  login: async ({ email }) => {
+    try {
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+
+      if (error) {
+        alert(error.message);
+      } else {
+        alert("Check your email for the login link!");
+        return {
+          success: true,
+        };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error,
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        message: "Otp delivery failed.",
+        name: "Something went wrong!",
+      },
+    };
+  },
+  logout: async () => {
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      return {
+        success: false,
+        error,
+      };
+    }
+
+    return {
+      success: true,
+      redirectTo: "/",
+    };
+  },
+  onError: async (error) => {
+    console.error(error);
+    return { error };
+  },
+  check: async () => {
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      const { session } = data;
+
+      if (!session) {
+        return {
+          authenticated: false,
+          error: {
+            message: "Check failed",
+            name: "Session not found",
+          },
+          logout: true,
+          redirectTo: "/login",
+        };
+      }
+    } catch (error: any) {
+      return {
+        authenticated: false,
+        error: error || {
+          message: "Check failed",
+          name: "Not authenticated",
+        },
+        logout: true,
+        redirectTo: "/login",
+      };
+    }
+
+    return {
+      authenticated: true,
+    };
+  },
+  getIdentity: async () => {
+    const { data } = await supabaseClient.auth.getUser();
+
+    if (data?.user) {
+      return {
+        ...data.user,
+        name: data.user.email,
+      };
+    }
+
+    return null;
+  },
+};
+
+export default authProvider;
+```
+
+
 ### Set up a Login component
 
-We have chosen to use the headless **refine** core package that comes with no supported UI framework. So, let's set up a plain React component to manage logins and sign ups. We'll use Magic Links, so users can sign in with their email without using passwords.
+We have chosen to use the headless **refine** core package that comes with no supported UI framework. So, let's set up a plain React component to manage logins and sign ups.
 
 Create and edit `src/components/auth.tsx`:
 
-```tsx title="src/components/auth.tsx"
+```ts title="src/components/auth.tsx"
 import { useState } from "react";
-import { supabaseClient } from "../utility/supabaseClient";
+import { useLogin } from "@refinedev/core";
 
 export default function Auth() {
-  const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-
-  const handleLogin = async (event: { preventDefault: () => void }) => {
-    event.preventDefault();
-
-    setLoading(true);
-    const { error } = await supabaseClient.auth.signInWithOtp({ email });
-
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("Check your email for the login link!");
-    }
-    setLoading(false);
-  }
+    const [email, setEmail] = useState("");
+    const { isLoading, mutate: login } = useLogin();
+    
+    const handleLogin = async (event: { preventDefault: () => void }) => {
+      event.preventDefault();
+      login({ email });
+    };
 
   return (
     <div className="row flex flex-center">
@@ -193,8 +324,8 @@ export default function Auth() {
             />
           </div>
           <div>
-            <button className={"button block"} disabled={loading}>
-              {loading ? <span>Loading</span> : <span>Send magic link</span>}
+            <button className={"button block"} disabled={isLoading}>
+              {isLoading ? <span>Loading</span> : <span>Send magic link</span>}
             </button>
           </div>
         </form>
@@ -204,7 +335,9 @@ export default function Auth() {
 };
 ```
 
-Notice the use of `supabaseClient` to access the `signInWithOtp` auth method. We can access `supabaseClient.auth` methods using the client like this from anywhere in our app. However, as we'll see later, a neater and conventional way to leverage **Supabase** client methods is inside **refine**'s provider methods.
+Notice we are using the **refine** auth `useLogin()` hook to grab the `mutate: login` method to use inside `handleLogin()` function and `isLoading` state for our form submission. The `useLogin()` hook conveniently offers us access to `authProvider.login` method for authenticating the user with OTP.
+
+[Refer to the `useLogin()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/authentication/useLogin/)
 
 
 ### Account page
@@ -338,6 +471,7 @@ Notice above that, we are using three **refine** hooks, namely the `useGetIdenti
 `useForm()`, in contrast, is a data hook that exposes a series of useful objects that serve the edit form. For example, we are grabbing `queryResult` to present fetched API data inside form fields. We are also using the `onFinish` function to define the `handleSubmit` event handler and `formLoading` property to present state changes of the submitted form. The `useForm()` hook invokes the `dataProvider.getOne` method to get the user profile data from our **Supabase** `/profiles` endpoint. It also invokes `dataProvider.update` method when `onFinish()` is called.
 
 [Refer to the `useForm()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/useForm/)
+
 
 ### Launch!
 
@@ -562,440 +696,6 @@ return (
 )
 ```
 
-
-## Bonus: Customize `authProvider`
-
-Now let's see how easy and convenient it is to customize the `login` method of `authProvider`. 
-
-If we examine the `src/authProvider.ts` file, the `authProvider` object looks like this:
-
-```ts title="src/authProvider.ts"
-import { AuthBindings } from "@refinedev/core";
-
-import { supabaseClient } from "./utility";
-
-const authProvider: AuthBindings = {
-  login: async ({ email, password, providerName }) => {
-    // sign in with oauth
-    try {
-      if (providerName) {
-        const { data, error } = await supabaseClient.auth.signInWithOAuth({
-          provider: providerName,
-        });
-
-        if (error) {
-          return {
-            success: false,
-            error,
-          };
-        }
-
-        if (data?.url) {
-          return {
-            success: true,
-            redirectTo: "/",
-          };
-        }
-      }
-
-      // sign in with email and password
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data?.user) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Login failed",
-        name: "Invalid email or password",
-      },
-    };
-  },
-  register: async ({ email, password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Register failed",
-        name: "Invalid email or password",
-      },
-    };
-  },
-  forgotPassword: async ({ email }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${window.location.origin}/update-password`,
-        }
-      );
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Forgot password failed",
-        name: "Invalid email",
-      },
-    };
-  },
-  updatePassword: async ({ password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.updateUser({
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-    return {
-      success: false,
-      error: {
-        message: "Update password failed",
-        name: "Invalid password",
-      },
-    };
-  },
-  logout: async () => {
-    const { error } = await supabaseClient.auth.signOut();
-
-    if (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: true,
-      redirectTo: "/",
-    };
-  },
-  onError: async (error) => {
-    console.error(error);
-    return { error };
-  },
-  check: async () => {
-    try {
-      const { data } = await supabaseClient.auth.getSession();
-      const { session } = data;
-
-      if (!session) {
-        return {
-          authenticated: false,
-          error: {
-            message: "Check failed",
-            name: "Session not found",
-          },
-          logout: true,
-          redirectTo: "/login",
-        };
-      }
-    } catch (error: any) {
-      return {
-        authenticated: false,
-        error: error || {
-          message: "Check failed",
-          name: "Not authenticated",
-        },
-        logout: true,
-        redirectTo: "/login",
-      };
-    }
-
-    return {
-      authenticated: true,
-    };
-  },
-  getPermissions: async () => {
-    const user = await supabaseClient.auth.getUser();
-
-    if (user) {
-      return user.data.user?.role;
-    }
-
-    return null;
-  },
-  getIdentity: async () => {
-    const { data } = await supabaseClient.auth.getUser();
-
-    if (data?.user) {
-      return {
-        ...data.user,
-        name: data.user.email,
-      };
-    }
-
-    return null;
-  },
-};
-
-export default authProvider;
-```
-
-By default, the `authProvider.login` method sets up OAuth and an email/password strategy for authentication. But we want to change it to OTP based login.
-
-Currently, the `<Auth />` component directly uses the `supabaseClient.auth.signInWithOtp` method for sending magic links. We'd like to refactor it inside the `authProvider.login` method like this:
-
-```ts
-login: async ({ email }) => {
-    try {
-      const { error } = await supabaseClient.auth.signInWithOtp({ email });
-
-      if (error) {
-        alert(error.message);
-      } else {
-        alert("Check your email for the login link!");
-        return {
-          success: true,
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Otp delivery failed.",
-        name: "Something went wrong!",
-      },
-    };
-  },
-```
-
-Then inside our `<Auth />` component, things get very pretty:
-
-```ts title="src/components/auth.tsx"
-import { useState } from "react";
-import { useLogin } from "@refinedev/core";
-
-export default function Auth() {
-    const [email, setEmail] = useState("");
-    const { isLoading, mutate: login } = useLogin();
-    
-    const handleLogin = async (event: { preventDefault: () => void }) => {
-      event.preventDefault();
-      login({ email });
-    };
-
-  return (
-    <div className="row flex flex-center">
-      <div className="col-6 form-widget">
-        <h1 className="header">Supabase + refine</h1>
-        <p className="description">Sign in via magic link with your email below</p>
-        <form className="form-widget" onSubmit={handleLogin}>
-          <div>
-            <input
-              className="inputField"
-              type="email"
-              placeholder="Your email"
-              value={email}
-              required={true}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <button className={"button block"} disabled={isLoading}>
-              {isLoading ? <span>Loading</span> : <span>Send magic link</span>}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-```
-
-Notice now we are using the **refine** auth `useLogin()` hook to grab the `login` method to use inside `handleLogin()` function and `isLoading` state conveniently for our form submission.
-
-[Refer to the `useLogin()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/authentication/useLogin/)
-
-We can also remove `register`, `updatePassword`, `forgotPassword` and `getPermissions` properties, which are optional type members and also not necessary for our app. The final `authProvider` object looks like this:
-
-```ts title="src/authProvider.ts"
-import { AuthBindings } from "@refinedev/core";
-
-import { supabaseClient } from "./utility";
-
-const authProvider: AuthBindings = {
-  login: async ({ email }) => {
-    try {
-      const { error } = await supabaseClient.auth.signInWithOtp({ email });
-
-      if (error) {
-        alert(error.message);
-      } else {
-        alert("Check your email for the login link!");
-        return {
-          success: true,
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: "Otp delivery failed.",
-        name: "Something went wrong!",
-      },
-    };
-  },
-  logout: async () => {
-    const { error } = await supabaseClient.auth.signOut();
-
-    if (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
-    return {
-      success: true,
-      redirectTo: "/",
-    };
-  },
-  onError: async (error) => {
-    console.error(error);
-    return { error };
-  },
-  check: async () => {
-    try {
-      const { data } = await supabaseClient.auth.getSession();
-      const { session } = data;
-
-      if (!session) {
-        return {
-          authenticated: false,
-          error: {
-            message: "Check failed",
-            name: "Session not found",
-          },
-          logout: true,
-          redirectTo: "/login",
-        };
-      }
-    } catch (error: any) {
-      return {
-        authenticated: false,
-        error: error || {
-          message: "Check failed",
-          name: "Not authenticated",
-        },
-        logout: true,
-        redirectTo: "/login",
-      };
-    }
-
-    return {
-      authenticated: true,
-    };
-  },
-  getIdentity: async () => {
-    const { data } = await supabaseClient.auth.getUser();
-
-    if (data?.user) {
-      return {
-        ...data.user,
-        name: data.user.email,
-      };
-    }
-
-    return null;
-  },
-};
-
-export default authProvider;
-```
 
 ### Storage management
 
