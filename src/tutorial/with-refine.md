@@ -49,7 +49,13 @@ In the above `npm create` command, we are using the `refine-supabase` preset whi
 
 The `refine-supabase` preset installs the `@refinedev/supabase` package which out-of-the-box includes the **Supabase** dependency: [supabase-js](https://github.com/supabase/supabase-js).
 
-With the app initialized, at this point before we begin discussing **refine** concepts, let's try running the app:
+We also need to install `@refinedev/react-hook-form` package which is a **refine** package that supports [**React Hook Form**](https://react-hook-form.com) inside **refine** apps. Run:
+
+```bash
+npm install @refinedev/react-hook-form
+```
+
+With the app initialized and packages installed, at this point before we begin discussing **refine** concepts, let's try running the app:
 
 ```npm
 cd supabase-refine
@@ -83,7 +89,7 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
 });
 ```
 
-And thene want to save the environment variables in a `.env.local` file. All you need are the API URL and the `anon` key that you copied [earlier](#get-the-api-keys).
+And then we want to save the environment variables in a `.env.local` file. All you need are the API URL and the `anon` key that you copied [earlier](#get-the-api-keys).
 
 ```bash title=.env.local
 VITE_SUPABASE_URL=YOUR_SUPABASE_URL
