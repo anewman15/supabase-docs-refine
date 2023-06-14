@@ -8,27 +8,19 @@ const authProvider: AuthBindings = {
       const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
       if (error) {
-        alert(error.message);
+        throw new Error(error.message);
       } else {
         alert("Check your email for the login link!");
         return {
           success: true,
         };
       }
-    } catch (error: any) {
+    } catch (e) {
       return {
         success: false,
-        error,
+        e,
       };
     }
-
-    return {
-      success: false,
-      error: {
-        message: "Otp delivery failed.",
-        name: "Something went wrong!",
-      },
-    };
   },
   logout: async () => {
     const { error } = await supabaseClient.auth.signOut();
