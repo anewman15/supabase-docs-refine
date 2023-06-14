@@ -157,24 +157,25 @@ We want to use `supabaseClient` auth's `signInWithOtp` method inside `authProvid
 
 ```ts
 login: async ({ email }) => {
-    try {
-      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+  try {
+    const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
-      if (error) {
-        throw new Error(error.message);
-      } else {
-        alert("Check your email for the login link!");
-        return {
-          success: true,
-        };
-      }
-    } catch (e) {
+    if (!error) {
+      alert("Check your email for the login link!");
       return {
-        success: false,
-        e,
+        success: true,
       };
-    }
-  },
+    };
+      
+    throw error;
+  } catch (e: any) {
+    alert(e.message);
+    return {
+      success: false,
+      e,
+    };
+  }
+},
 ```
 
 We also want to remove `register`, `updatePassword`, `forgotPassword` and `getPermissions` properties, which are optional type members and also not necessary for our app. The final `authProvider` object looks like this:
@@ -189,15 +190,16 @@ const authProvider: AuthBindings = {
     try {
       const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
-      if (error) {
-        throw new Error(error.message);
-      } else {
+      if (!error) {
         alert("Check your email for the login link!");
         return {
           success: true,
         };
-      }
-    } catch (e) {
+      };
+        
+      throw error;
+    } catch (e: any) {
+      alert(e.message);
       return {
         success: false,
         e,
