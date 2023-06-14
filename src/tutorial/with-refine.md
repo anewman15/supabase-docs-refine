@@ -63,7 +63,7 @@ Let's move ahead to understanding the generated code now.
 
 ### refine `supabaseClient`
 
-The **refine CLI** generated a **Supabase** client for us in the `src/utility/supabaseClient.ts` file.
+The **refine CLI** generated a **Supabase** client for us in the `src/utility/supabaseClient.ts` file. It has two constants: `SUPABASE_URL` and `SUPABASE_KEY`. We want to replace them as `supabaseUrl` and `supabaseAnonKey` respectively and assign them our own **Supabase** server's values.
 
 We'll update it with environment variables managed by Vite:
 
@@ -83,7 +83,7 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
 });
 ```
 
-The `SUPABASE_URL` and `SUPABASE_KEY` constants are assigned some default values at initialization. We want to replace them with our own **Supabase** server's values. For this, we want to save the environment variables in a `.env.local` file. All you need are the API URL and the `anon` key that you copied [earlier](#get-the-api-keys).
+And thene want to save the environment variables in a `.env.local` file. All you need are the API URL and the `anon` key that you copied [earlier](#get-the-api-keys).
 
 ```bash title=.env.local
 VITE_SUPABASE_URL=YOUR_SUPABASE_URL
