@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import {
   BaseKey,
-  useForm,
   useGetIdentity,
   useLogout,
 } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
 import Avatar from "./avatar";
 
-export interface IUserIdentity {
+interface IUserIdentity {
   id?: BaseKey;
   username: string;
   name: string;
@@ -25,77 +25,50 @@ export default function Account() {
 
   const { mutate: logOut } = useLogout();
 
-  const { formLoading, onFinish, queryResult } = useForm<IProfile>({
-    resource: "profiles",
-    action: "edit",
-    id: userIdentity?.id,
-    redirect: false,
+  const { 
+    refineCore: { formLoading, onFinish, },
+    register,
+    handleSubmit,
+  } = useForm<IProfile>({
+    refineCoreProps:{
+      resource: "profiles",
+      action: "edit",
+      id: userIdentity?.id,
+      redirect: false,
+      onMutationError: (data) => alert(data?.message),
+    }
   });
-
-  const defaultFormValues = queryResult?.data?.data;
-
-  const [formValues, setFormValues] = useState<IProfile>({
-    id: defaultFormValues?.id || "",
-    username: defaultFormValues?.username || "",
-    website: defaultFormValues?.website || "",
-    avatar_url: defaultFormValues?.avatar_url || "",
-  });
-
-  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormValues({
-      ...formValues,
-      [e.target.name]: e.target.value
-    });
-  };
-  
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onFinish(formValues);
-  };
-
-  useEffect(
-    () => {
-      setFormValues({
-        id: defaultFormValues?.id || "",
-        username: defaultFormValues?.username || "",
-        website: defaultFormValues?.website || "",
-        avatar_url: defaultFormValues?.avatar_url || "",
-      })
-    }, [defaultFormValues]
-  );
 
   return (
     <div className="container" style={{ padding: "50px 0 100px 0" }}>
-      <form onSubmit={handleSubmit} className="form-widget">
+      <form onSubmit={handleSubmit(onFinish)} className="form-widget">
         <Avatar
           id={userIdentity?.id}
-          url={formValues?.avatar_url}
           size={150}
-          formValues={formValues}
         />
         <div>
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="text" value={userIdentity?.name} disabled />
+          <input
+            id="email"
+            name="email"
+            type="text"
+            value={userIdentity?.name}
+            disabled />
         </div>
         <div>
           <label htmlFor="username">Name</label>
           <input
             id="username"
-            name="username"
             type="text"
-            required
-            value={formValues?.username}
-            onChange={handleOnChange}
+            {...register("username")}
           />
         </div>
         <div>
           <label htmlFor="website">Website</label>
           <input
             id="website"
-            name="website"
             type="url"
-            value={formValues?.website}
-            onChange={handleOnChange}
+            {...register("website")}
           />
         </div>
 
