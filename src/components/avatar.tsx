@@ -1,21 +1,29 @@
 import { useEffect, useState } from "react";
 import { supabaseClient } from "../utility/supabaseClient";
-import { BaseKey, useUpdate } from "@refinedev/core";
-import { IProfile } from "./account";
 
-export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url?: string; size: number; formValues: IProfile}) {
+type TAvatarProps = {
+  url?: string;
+  size: number;
+  onUpload: (filePath: string) => void;
+};
+
+export default function Avatar({
+  url,
+  size,
+  onUpload,
+}: TAvatarProps) {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const { mutate } = useUpdate();
-  
   useEffect(() => {
     if (url) downloadImage(url);
   }, [url]);
 
   async function downloadImage(path: string) {
     try {
-      const { data, error } = await supabaseClient.storage.from("avatars").download(path);
+      const { data, error } = await supabaseClient.storage
+        .from("avatars")
+        .download(path);
       if (error) {
         throw error;
       }
@@ -39,21 +47,14 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      let { error: uploadError } = await supabaseClient.storage.from("avatars").upload(filePath, file);
+      const { error: uploadError } = await supabaseClient.storage
+        .from("avatars")
+        .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
-
-      mutate({
-        resource: "profiles",
-        values: {
-          ...formValues,
-          avatar_url: filePath,
-        },
-        id,
-      })
-      
+      onUpload(filePath);
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -71,7 +72,10 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
           style={{ height: size, width: size }}
         />
       ) : (
-        <div className="avatar no-image" style={{ height: size, width: size }} />
+        <div
+          className="avatar no-image"
+          style={{ height: size, width: size }}
+        />
       )}
       <div style={{ width: size }}>
         <label className="button primary block" htmlFor="single">
@@ -84,7 +88,7 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
           }}
           type="file"
           id="single"
-          name="avatar"
+          name="avatar_url"
           accept="image/*"
           onChange={uploadAvatar}
           disabled={uploading}
