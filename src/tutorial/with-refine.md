@@ -14,15 +14,14 @@ export const meta = {
 
 [**refine**](https://refine.dev) is a React based framework that is used to rapidly build data heavy applications like admin panels, dashboards and storefronts. It separates app concerns into individual layers, each backed by a React context and respective provider object. For example, the auth layer represents a context served by a specific set of `authProvider` methods that carry out authentication and athorization actions such as logging in, logging out, getting roles data, etc. Similarly, the data layer offers another level of abstraction that is equipped with `dataProvider` methods to handle CRUD operations at appropriate backend API endpoints.
 
-The provider methods are accessed from a UI component via corresponding hooks. **refine**'s core package provides low level and high level hooks for each provider method. For example, `authProvider`'s `login` method is accessible via the `useLogin()` auth hook and the `logOut` method can be reached via the `useLogOut()` hook; and `dataProvider`'s `update` method is invoked via the `useUpdate()` data hook and also via the `useForm()` hook. We'll elaborate on these in the coming sections.
+The provider methods are accessed from a UI component via corresponding hooks. **refine**'s core and supplmentary packages provide various hooks for each provider method. For example, `authProvider`'s `login` method is accessible via the `useLogin()` auth hook and the `logOut` method can be reached via the `useLogOut()` hook; and `dataProvider`'s `update` method is invoked via the `useUpdate()` core data hook and also via a **React Hook Form** supported `useForm()` hook. We'll elaborate on these in the coming sections.
 
-**refine** provides excellent support for **Supabase** backend with its optional `@refinedev/supabase` package. It generates `authProvider` and `dataProvider` methods at project initialization so we don't need to expend much effort to define them ourselves. We just need to choose **Supabase** as our backend service while creating the app with **refine CLI**.
+**refine** provides hassle-free integration with **Supabase** backend with its supplementary `@refinedev/supabase` package. It generates `authProvider` and `dataProvider` methods at project initialization so we don't need to expend much effort to define them ourselves. We just need to choose **Supabase** as our backend service while creating the app with **refine CLI**.
 
 
 <Admonition type="note">
-It is possible to customize the `authProvider` for **Supabase** while the `dataProvider` is stable and cannot be modified. The `authProvider` can be changed from `src/authProvider.ts` file. In contrast, **Supabase** `dataProvider` is part of `node_modules` and therefore not subject to modification.
+  It is possible to customize the `authProvider` for **Supabase** and as we'll see below, it can be tweaked from `src/authProvider.ts` file. In contrast, the **Supabase** `dataProvider` is part of `node_modules` and therefore is not subject to modification.
 </Admonition>
-
 
 <Admonition type="note">
   If you get stuck while working through this guide, refer to the [full example on
@@ -49,15 +48,15 @@ In the above `npm create` command, we are using the `refine-supabase` preset whi
 
 The `refine-supabase` preset installs the `@refinedev/supabase` package which out-of-the-box includes the **Supabase** dependency: [supabase-js](https://github.com/supabase/supabase-js).
 
-We also need to install `@refinedev/react-hook-form` package which is a **refine** package that supports [**React Hook Form**](https://react-hook-form.com) inside **refine** apps. Run:
+We also need to install `@refinedev/react-hook-form` and `react-hook-form` packages that allow us to use [**React Hook Form**](https://react-hook-form.com) inside **refine** apps. Run:
 
 ```bash
-npm install @refinedev/react-hook-form
+npm install @refinedev/react-hook-form react-hook-form
 ```
 
 With the app initialized and packages installed, at this point before we begin discussing **refine** concepts, let's try running the app:
 
-```npm
+```bash
 cd supabase-refine
 npm run dev
 ```
@@ -157,7 +156,7 @@ We'd like to focus on the `<Refine />` component, which comes with several props
 
 ## Customize `authProvider`
 
-If you examine the `authProvider` object you can notice that it has a `login` method that implements a OAuth and Email / Password strategy for authentication. We'll, however, ditch them and use Magic Links to allow users sign in with their email without using passwords.
+If you examine the `authProvider` object you can notice that it has a `login` method that implements a OAuth and Email / Password strategy for authentication. We'll, however, remove them and use Magic Links to allow users sign in with their email without using passwords.
 
 We want to use `supabaseClient` auth's `signInWithOtp` method inside `authProvider.login` method:
 
@@ -328,7 +327,7 @@ export default function Auth() {
 };
 ```
 
-Notice we are using the **refine** auth `useLogin()` hook to grab the `mutate: login` method to use inside `handleLogin()` function and `isLoading` state for our form submission. The `useLogin()` hook conveniently offers us access to `authProvider.login` method for authenticating the user with OTP.
+Notice we are using the `useLogin()` **refine** auth hook to grab the `mutate: login` method to use inside `handleLogin()` function and `isLoading` state for our form submission. The `useLogin()` hook conveniently offers us access to `authProvider.login` method for authenticating the user with OTP.
 
 [Refer to the `useLogin()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/authentication/useLogin/)
 
@@ -340,15 +339,10 @@ After a user is signed in we can allow them to edit their profile details and ma
 Let's create a new component for that in `src/components/account.tsx`.
 
 ```tsx title="src/components/account.tsx"
-import { useState, useEffect } from "react";
-import {
-  BaseKey,
-  useForm,
-  useGetIdentity,
-  useLogout,
-} from "@refinedev/core";
+import { BaseKey, useGetIdentity, useLogout } from "@refinedev/core";
+import { useForm } from "@refinedev/react-hook-form";
 
-export interface IUserIdentity {
+interface IUserIdentity {
   id?: BaseKey;
   username: string;
   name: string;
@@ -366,82 +360,59 @@ export default function Account() {
 
   const { mutate: logOut } = useLogout();
 
-  const { formLoading, onFinish, queryResult } = useForm<IProfile>({
-    resource: "profiles",
-    action: "edit",
-    id: userIdentity?.id,
-    redirect: false,
+  const {
+    refineCore: { formLoading, queryResult, onFinish },
+    register,
+    control,
+    handleSubmit,
+  } = useForm<IProfile>({
+    refineCoreProps: {
+      resource: "profiles",
+      action: "edit",
+      id: userIdentity?.id,
+      redirect: false,
+      onMutationError: (data) => alert(data?.message),
+    },
   });
-
-  const defaultFormValues = queryResult?.data?.data;
-
-  const [formValues, setFormValues] = useState<IProfile>({
-    id: defaultFormValues?.id || "",
-    username: defaultFormValues?.username || "",
-    website: defaultFormValues?.website || "",
-    avatar_url: defaultFormValues?.avatar_url || "",
-  });
-
-  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormValues({
-      ...formValues,
-      [e.target.name]: e.target.value
-    });
-  };
-  
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onFinish(formValues);
-  };
-
-  useEffect(
-    () => {
-      setFormValues({
-        id: defaultFormValues?.id || "",
-        username: defaultFormValues?.username || "",
-        website: defaultFormValues?.website || "",
-        avatar_url: defaultFormValues?.avatar_url || "",
-      })
-    }, [defaultFormValues]
-  );
 
   return (
     <div className="container" style={{ padding: "50px 0 100px 0" }}>
-      <form onSubmit={handleSubmit} className="form-widget">
+      <form onSubmit={handleSubmit(onFinish)} className="form-widget">
         <div>
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="text" value={userIdentity?.name} disabled />
+          <input
+            id="email"
+            name="email"
+            type="text"
+            value={userIdentity?.name}
+            disabled
+          />
         </div>
         <div>
           <label htmlFor="username">Name</label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            required
-            value={formValues?.username}
-            onChange={handleOnChange}
-          />
+          <input id="username" type="text" {...register("username")} />
         </div>
         <div>
           <label htmlFor="website">Website</label>
-          <input
-            id="website"
-            name="website"
-            type="url"
-            value={formValues?.website}
-            onChange={handleOnChange}
-          />
+          <input id="website" type="url" {...register("website")} />
         </div>
 
         <div>
-          <button className="button block primary" type="submit" disabled={formLoading}>
+          <button
+            className="button block primary"
+            type="submit"
+            disabled={formLoading}
+          >
             {formLoading ? "Loading ..." : "Update"}
           </button>
         </div>
 
         <div>
-          <button className="button block" type="button" onClick={() => logOut()}>
+          <button
+            className="button block"
+            type="button"
+            onClick={() => logOut()}
+          >
             Sign Out
           </button>
         </div>
@@ -461,9 +432,11 @@ Notice above that, we are using three **refine** hooks, namely the `useGetIdenti
 
 [Refer to the `useLogOut()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/authentication/useLogout/)
 
-`useForm()`, in contrast, is a data hook that exposes a series of useful objects that serve the edit form. For example, we are grabbing `queryResult` to present fetched API data inside form fields. We are also using the `onFinish` function to define the `handleSubmit` event handler and `formLoading` property to present state changes of the submitted form. The `useForm()` hook invokes the `dataProvider.getOne` method to get the user profile data from our **Supabase** `/profiles` endpoint. It also invokes `dataProvider.update` method when `onFinish()` is called.
+`useForm()`, in contrast, is a data hook that exposes a series of useful objects that serve the edit form. For example, we are grabbing the `onFinish` function to submit the form with the `handleSubmit` event handler. We are aslo using `formLoading` property to present state changes of the submitted form.
 
-[Refer to the `useForm()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/useForm/)
+The `useForm()` hook is a higher level hook built on top of **refine**'s `useForm()` core hook. It fully supports form state management, field validation and submission using **React Hook Form**. Behind the scenes, it invokes the `dataProvider.getOne` method to get the user profile data from our **Supabase** `/profiles` endpoint and also invokes `dataProvider.update` method when `onFinish()` is called.
+
+[Refer to the **refine React Hook Form** `useForm()` hook docs for more details.](https://refine.dev/docs/packages/documentation/react-hook-form/useForm/)
 
 
 ### Launch!
@@ -564,22 +537,30 @@ Create and edit `src/components/avatar.tsx`:
 ```tsx title="src/components/avatar.tsx"
 import { useEffect, useState } from "react";
 import { supabaseClient } from "../utility/supabaseClient";
-import { BaseKey, useUpdate } from "@refinedev/core";
-import { IProfile } from "./account";
 
-export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; url?: string; size: number; formValues: IProfile}) {
+type TAvatarProps = {
+  url?: string;
+  size: number;
+  onUpload: (filePath: string) => void;
+};
+
+export default function Avatar({
+  url,
+  size,
+  onUpload,
+}: TAvatarProps) {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const { mutate } = useUpdate();
-  
   useEffect(() => {
     if (url) downloadImage(url);
   }, [url]);
 
   async function downloadImage(path: string) {
     try {
-      const { data, error } = await supabaseClient.storage.from("avatars").download(path);
+      const { data, error } = await supabaseClient.storage
+        .from("avatars")
+        .download(path);
       if (error) {
         throw error;
       }
@@ -603,21 +584,14 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      let { error: uploadError } = await supabaseClient.storage.from("avatars").upload(filePath, file);
+      const { error: uploadError } = await supabaseClient.storage
+        .from("avatars")
+        .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
-
-      mutate({
-        resource: "profiles",
-        values: {
-          ...formValues,
-          avatar_url: filePath,
-        },
-        id,
-      })
-      
+      onUpload(filePath);
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -635,7 +609,10 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
           style={{ height: size, width: size }}
         />
       ) : (
-        <div className="avatar no-image" style={{ height: size, width: size }} />
+        <div
+          className="avatar no-image"
+          style={{ height: size, width: size }}
+        />
       )}
       <div style={{ width: size }}>
         <label className="button primary block" htmlFor="single">
@@ -648,7 +625,7 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
           }}
           type="file"
           id="single"
-          name="avatar"
+          name="avatar_url"
           accept="image/*"
           onChange={uploadAvatar}
           disabled={uploading}
@@ -659,17 +636,13 @@ export default function Avatar({ id, url, size, formValues }: { id?: BaseKey; ur
 };
 ```
 
-Notice we are using another  **refine** data hook above, the `useUpdate()` hook, which basically invokes the `dataProvider.update` method behind the scenes to upload and update the avatar image.
-
-[Refer to the `useUpdate()` hook docs for more details.](https://refine.dev/docs/api-reference/core/hooks/data/useUpdate/)
-
-
 ### Add the new widget
 
 And then we can add the widget to the Account page at `src/components/account.tsx`:
 
 ```tsx title="src/components/account.tsx"
-// Import the new component
+// Import the new components
+import { Controller } from "react-hook-form";
 import Avatar from "./avatar";
 
 // ...
@@ -677,16 +650,34 @@ import Avatar from "./avatar";
 return (
   <div className="container" style={{ padding: '50px 0 100px 0' }}>
     <form onSubmit={handleSubmit} className="form-widget">
-      <Avatar
-        id={userIdentity?.id}
-        url={formValues?.avatar_url}
-        size={150}
-        formValues={formValues}
+      <Controller
+        control={control}
+        name="avatar_url"
+        render={({ field }) => {
+          return (
+            <Avatar
+              url={field.value}
+              size={150}
+              onUpload={(filePath) => {
+                onFinish({
+                  ...queryResult?.data?.data,
+                  avatar_url: filePath,
+                  onMutationError: (data: { message: string; }) => alert(data?.message),
+                });
+                field.onChange({
+                  target: {
+                    value: filePath,
+                  },
+                });
+              }}
+            />
+          );
+        }}
       />
       {/* ... */}
     </form>
   </div>
-)
+);
 ```
 
 
